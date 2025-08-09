@@ -22,33 +22,25 @@ export default function NewClassPage() {
     subjects: [] as string[],
   });
 
-  // Mock data for teachers (in a real app, this would be fetched from Firestore)
-  const teachers = [
-    { id: '1', name: 'Dr. Oluwaseun Adebayo' },
-    { id: '2', name: 'Mrs. Chioma Eze' },
-    { id: '3', name: 'Mr. Emmanuel Nwachukwu' },
-    { id: '4', name: 'Ms. Fatima Ibrahim' },
-    { id: '5', name: 'Mr. Tunde Bakare' },
-  ];
+  const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([]);
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
 
-  // Mock data for subjects (in a real app, this would be fetched from Firestore)
-  const availableSubjects = [
-    'Mathematics',
-    'English',
-    'Science',
-    'Social Studies',
-    'Creative Arts',
-    'Physical Education',
-    'Computer Studies',
-    'Religious Studies',
-    'Home Economics',
-    'Agricultural Science',
-    'Business Studies',
-    'French',
-    'Yoruba',
-    'Igbo',
-    'Hausa',
-  ];
+  useEffect(() => {
+    const fetchTeachersAndSubjects = async () => {
+      try {
+        const teachersSnapshot = await getDocs(collection(db, 'users'), where('role', '==', 'teacher'));
+        const teachersData = teachersSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name || doc.data().email }));
+        setTeachers(teachersData);
+
+        const subjectsSnapshot = await getDocs(collection(db, 'subjects'));
+        const subjectsData = subjectsSnapshot.docs.map(doc => doc.data().name);
+        setAvailableSubjects(subjectsData);
+      } catch (error) {
+        console.error('Error fetching teachers and subjects:', error);
+      }
+    };
+    fetchTeachersAndSubjects();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -106,20 +98,14 @@ export default function NewClassPage() {
         throw new Error('At least one subject must be selected');
       }
 
-      // In a real implementation, this would save to Firestore
-      // const docRef = await addDoc(collection(db, 'classes'), {
-      //   ...formData,
-      //   currentStudents: 0,
-      //   createdAt: new Date(),
-      // });
+      const docRef = await addDoc(collection(db, 'classes'), {
+        ...formData,
+        currentStudents: 0,
+        createdAt: new Date(),
+      });
       
-      // For demo purposes, we'll just simulate a successful save
-      console.log('Class would be saved with data:', formData);
-      
-      // Redirect to the classes list
-      setTimeout(() => {
-        router.push('/dashboard/classes');
-      }, 1000);
+      alert('Class added successfully!');
+      router.push('/dashboard/classes');
     } catch (error) {
       console.error('Error adding class:', error);
       setError(error instanceof Error ? error.message : 'Failed to add class');

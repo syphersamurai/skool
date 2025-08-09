@@ -247,42 +247,33 @@ export default function RecordPaymentPage() {
       const balance = totalAmount - amountPaid;
 
       // Determine payment status
-      let status: 'paid' | 'partial' | 'unpaid';
+      let status: 'paid' | 'partial' | 'unpaid' | 'overdue';
       if (balance === 0) {
         status = 'paid';
-      } else if (balance === totalAmount) {
+      } else if (amountPaid === 0) {
         status = 'unpaid';
       } else {
         status = 'partial';
       }
 
-      // In a real implementation, this would add to Firestore
-      // For demo purposes, we'll simulate a successful addition
-      
-      // const docRef = await addDoc(collection(db, 'feeRecords'), {
-      //   studentId: formData.studentId,
-      //   studentName: students.find(s => s.id === formData.studentId)?.name,
-      //   class: students.find(s => s.id === formData.studentId)?.class,
-      //   feeType: feeTypes.find(f => f.id === formData.feeTypeId)?.name,
-      //   amount: totalAmount,
-      //   amountPaid: amountPaid,
-      //   balance: balance,
-      //   status: status,
-      //   paymentDate: formData.paymentDate,
-      //   paymentMethod: formData.paymentMethod,
-      //   transactionId: formData.transactionId,
-      //   term: formData.term,
-      //   academicYear: formData.academicYear,
-      //   notes: formData.notes,
-      //   couponCode: formData.couponCode,
-      //   createdAt: serverTimestamp(),
-      //   updatedAt: serverTimestamp(),
-      // });
+      // Create a payment record
+      await paymentsService.create({
+        feeId: '', // This needs to be linked to an actual fee record
+        studentId: formData.studentId,
+        studentName: students.find(s => s.id === formData.studentId)?.name || '',
+        amount: amountPaid,
+        paymentMethod: formData.paymentMethod as 'cash' | 'bank_transfer' | 'cheque' | 'paystack',
+        paymentDate: new Date(formData.paymentDate),
+        transactionId: formData.transactionId,
+        status: 'completed',
+        discountApplied: discount > 0,
+        discountAmount: discount,
+        metadata: { notes: formData.notes, couponCode: formData.couponCode },
+      });
 
-      // Simulate a delay for the demo
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Success message and redirect
+      // TODO: Update the corresponding fee record (this requires finding the fee record first)
+      // For now, we'll just create a new payment record.
+
       alert('Payment recorded successfully!');
       router.push('/dashboard/fees');
     } catch (err: any) {

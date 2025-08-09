@@ -33,166 +33,44 @@ export default function FeesPage() {
   const router = useRouter();
 
   useEffect(() => {
-    fetchFeeRecords();
-  }, [statusFilter, classFilter, termFilter]);
+    async function fetchFeeRecords() {
+      setLoading(true);
+      try {
+        let feesQuery = collection(db, 'fees');
 
-  async function fetchFeeRecords() {
-    setLoading(true);
-    try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockFeeRecords: FeeRecord[] = [
-        {
-          id: '1',
-          studentId: '1',
-          studentName: 'John Doe',
-          class: 'Basic 1',
-          feeType: 'Tuition Fee',
-          amount: 50000,
-          amountPaid: 50000,
-          balance: 0,
-          dueDate: '2023-09-15',
-          status: 'paid',
-          paymentDate: '2023-09-10',
-          paymentMethod: 'Bank Transfer',
-          transactionId: 'TRX123456',
-          term: 'First Term',
-          academicYear: '2023/2024',
-        },
-        {
-          id: '2',
-          studentId: '2',
-          studentName: 'Mary Johnson',
-          class: 'Basic 2',
-          feeType: 'Tuition Fee',
-          amount: 55000,
-          amountPaid: 30000,
-          balance: 25000,
-          dueDate: '2023-09-15',
-          status: 'partial',
-          paymentDate: '2023-09-05',
-          paymentMethod: 'Paystack',
-          transactionId: 'TRX234567',
-          term: 'First Term',
-          academicYear: '2023/2024',
-        },
-        {
-          id: '3',
-          studentId: '3',
-          studentName: 'David Smith',
-          class: 'Basic 3',
-          feeType: 'Tuition Fee',
-          amount: 60000,
-          amountPaid: 0,
-          balance: 60000,
-          dueDate: '2023-09-15',
-          status: 'unpaid',
-          term: 'First Term',
-          academicYear: '2023/2024',
-        },
-        {
-          id: '4',
-          studentId: '4',
-          studentName: 'Grace Okafor',
-          class: 'Basic 4',
-          feeType: 'Tuition Fee',
-          amount: 65000,
-          amountPaid: 0,
-          balance: 65000,
-          dueDate: '2023-09-15',
-          status: 'overdue',
-          term: 'First Term',
-          academicYear: '2023/2024',
-        },
-        {
-          id: '5',
-          studentId: '5',
-          studentName: 'Ibrahim Musa',
-          class: 'Basic 5',
-          feeType: 'Tuition Fee',
-          amount: 70000,
-          amountPaid: 70000,
-          balance: 0,
-          dueDate: '2023-09-15',
-          status: 'paid',
-          paymentDate: '2023-09-12',
-          paymentMethod: 'Cash',
-          transactionId: 'TRX345678',
-          term: 'First Term',
-          academicYear: '2023/2024',
-        },
-        {
-          id: '6',
-          studentId: '6',
-          studentName: 'Chioma Eze',
-          class: 'Basic 6',
-          feeType: 'Tuition Fee',
-          amount: 75000,
-          amountPaid: 40000,
-          balance: 35000,
-          dueDate: '2023-09-15',
-          status: 'partial',
-          paymentDate: '2023-09-08',
-          paymentMethod: 'Paystack',
-          transactionId: 'TRX456789',
-          term: 'First Term',
-          academicYear: '2023/2024',
-        },
-        {
-          id: '7',
-          studentId: '1',
-          studentName: 'John Doe',
-          class: 'Basic 1',
-          feeType: 'Development Levy',
-          amount: 10000,
-          amountPaid: 10000,
-          balance: 0,
-          dueDate: '2023-09-30',
-          status: 'paid',
-          paymentDate: '2023-09-10',
-          paymentMethod: 'Bank Transfer',
-          transactionId: 'TRX567890',
-          term: 'First Term',
-          academicYear: '2023/2024',
-        },
-        {
-          id: '8',
-          studentId: '2',
-          studentName: 'Mary Johnson',
-          class: 'Basic 2',
-          feeType: 'Development Levy',
-          amount: 10000,
-          amountPaid: 0,
-          balance: 10000,
-          dueDate: '2023-09-30',
-          status: 'unpaid',
-          term: 'First Term',
-          academicYear: '2023/2024',
-        },
-      ];
+        if (statusFilter !== 'all') {
+          feesQuery = query(feesQuery, where('status', '==', statusFilter));
+        }
+        if (classFilter !== 'all') {
+          feesQuery = query(feesQuery, where('class', '==', classFilter));
+        }
+        if (termFilter !== 'all') {
+          feesQuery = query(feesQuery, where('term', '==', termFilter));
+        }
 
-      // Apply filters
-      let filteredRecords = mockFeeRecords;
-      
-      if (statusFilter !== 'all') {
-        filteredRecords = filteredRecords.filter(record => record.status === statusFilter);
-      }
-      
-      if (classFilter !== 'all') {
-        filteredRecords = filteredRecords.filter(record => record.class === classFilter);
-      }
-      
-      if (termFilter !== 'all') {
-        filteredRecords = filteredRecords.filter(record => record.term === termFilter);
-      }
+        const querySnapshot = await getDocs(feesQuery);
+        let fetchedRecords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as FeeRecord[];
 
-      setFeeRecords(filteredRecords);
-    } catch (error) {
-      console.error('Error fetching fee records:', error);
-    } finally {
-      setLoading(false);
+        // Apply search filter client-side
+        if (searchTerm) {
+          const term = searchTerm.toLowerCase();
+          fetchedRecords = fetchedRecords.filter(record => 
+            record.studentName.toLowerCase().includes(term) ||
+            record.feeType.toLowerCase().includes(term) ||
+            record.transactionId?.toLowerCase().includes(term)
+          );
+        }
+
+        setFeeRecords(fetchedRecords);
+      } catch (error) {
+        console.error('Error fetching fee records:', error);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
+
+    fetchFeeRecords();
+  }, [statusFilter, classFilter, termFilter, searchTerm]);
 
   // Filter fee records based on search term
   const filteredRecords = feeRecords.filter(record =>

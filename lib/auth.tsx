@@ -52,10 +52,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (userDoc.exists()) {
         const userData = userDoc.data() as Omit<UserData, 'uid'>;
         return {
+          ...userData,
           uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.displayName,
-          ...userData
+          email: userData.email || firebaseUser.email,
+          name: userData.name || firebaseUser.displayName
         } as UserData;
       } else {
         // If no user document exists, create a basic user object
@@ -102,8 +102,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, name: string, role: UserRole) => {
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      // Note: Additional user data is stored in the registration page
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        name,
+        email,
+        role,
+        createdAt: new Date().toISOString(),
+      });
     } finally {
       setLoading(false);
     }

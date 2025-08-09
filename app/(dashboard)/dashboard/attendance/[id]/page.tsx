@@ -40,63 +40,9 @@ export default function AttendanceDetailPage({ params }: { params: { id: string 
   async function fetchAttendanceDetails() {
     setLoading(true);
     try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockAttendanceRecords: Record<string, AttendanceRecord> = {
-        '1': {
-          id: '1',
-          date: new Date('2023-12-01'),
-          className: 'Basic 1',
-          totalStudents: 10,
-          presentCount: 8,
-          absentCount: 2,
-          attendanceRate: 80,
-          recordedBy: 'John Smith',
-          status: 'completed',
-          studentRecords: [
-            { studentId: '1', studentName: 'John Doe', rollNumber: 'B1001', status: 'present', note: '' },
-            { studentId: '2', studentName: 'Jane Smith', rollNumber: 'B1002', status: 'present', note: '' },
-            { studentId: '3', studentName: 'Michael Johnson', rollNumber: 'B1003', status: 'present', note: '' },
-            { studentId: '4', studentName: 'Emily Davis', rollNumber: 'B1004', status: 'present', note: '' },
-            { studentId: '5', studentName: 'David Wilson', rollNumber: 'B1005', status: 'absent', note: 'Sick leave' },
-            { studentId: '6', studentName: 'Sarah Brown', rollNumber: 'B1006', status: 'present', note: '' },
-            { studentId: '7', studentName: 'Amina Yusuf', rollNumber: 'B1007', status: 'present', note: '' },
-            { studentId: '8', studentName: 'Chinedu Okonkwo', rollNumber: 'B1008', status: 'present', note: '' },
-            { studentId: '9', studentName: 'Fatima Ahmed', rollNumber: 'B1009', status: 'present', note: '' },
-            { studentId: '10', studentName: 'Oluwaseun Adeyemi', rollNumber: 'B1010', status: 'absent', note: 'Family emergency' },
-          ],
-          createdAt: new Date('2023-12-01T08:30:00'),
-        },
-        '2': {
-          id: '2',
-          date: new Date('2023-12-01'),
-          className: 'Basic 2',
-          totalStudents: 10,
-          presentCount: 9,
-          absentCount: 1,
-          attendanceRate: 90,
-          recordedBy: 'Mary Johnson',
-          status: 'completed',
-          studentRecords: [
-            { studentId: '11', studentName: 'Alex Turner', rollNumber: 'B2001', status: 'present', note: '' },
-            { studentId: '12', studentName: 'Olivia Parker', rollNumber: 'B2002', status: 'present', note: '' },
-            { studentId: '13', studentName: 'Mohammed Ali', rollNumber: 'B2003', status: 'present', note: '' },
-            { studentId: '14', studentName: 'Grace Okafor', rollNumber: 'B2004', status: 'present', note: '' },
-            { studentId: '15', studentName: 'Daniel Lee', rollNumber: 'B2005', status: 'present', note: '' },
-            { studentId: '16', studentName: 'Sophia Chen', rollNumber: 'B2006', status: 'present', note: '' },
-            { studentId: '17', studentName: 'Tunde Bakare', rollNumber: 'B2007', status: 'present', note: '' },
-            { studentId: '18', studentName: 'Zainab Ibrahim', rollNumber: 'B2008', status: 'present', note: '' },
-            { studentId: '19', studentName: 'Emeka Eze', rollNumber: 'B2009', status: 'absent', note: 'Medical appointment' },
-            { studentId: '20', studentName: 'Ngozi Obi', rollNumber: 'B2010', status: 'present', note: '' },
-          ],
-          createdAt: new Date('2023-12-01T09:15:00'),
-        },
-        // Add more mock records as needed
-      };
-
-      const recordDetails = mockAttendanceRecords[params.id];
-      if (recordDetails) {
-        setAttendanceRecord(recordDetails);
+      const attendanceData = await attendanceService.getById(params.id);
+      if (attendanceData) {
+        setAttendanceRecord(attendanceData);
       } else {
         setError('Attendance record not found');
       }
@@ -343,6 +289,12 @@ export default function AttendanceDetailPage({ params }: { params: { id: string 
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => alert('Implement SMS notification to parents of absent students.')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Send SMS Notification
+            </button>
             <button
               onClick={() => router.push(`/dashboard/attendance?class=${encodeURIComponent(attendanceRecord.className)}`)}
               className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-100 text-sm font-medium"

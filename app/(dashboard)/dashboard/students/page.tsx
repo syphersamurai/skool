@@ -23,84 +23,27 @@ export default function StudentsPage() {
   const router = useRouter();
 
   useEffect(() => {
+    async function fetchStudents() {
+      setLoading(true);
+      try {
+        let studentsQuery = query(collection(db, 'students'));
+
+        if (classFilter !== 'all') {
+          studentsQuery = query(studentsQuery, where('class', '==', classFilter));
+        }
+
+        const querySnapshot = await getDocs(studentsQuery);
+        const studentsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Student[];
+        setStudents(studentsData);
+      } catch (error) {
+        console.error('Error fetching students:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchStudents();
   }, [classFilter]);
-
-  async function fetchStudents() {
-    setLoading(true);
-    try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockStudents: Student[] = [
-        {
-          id: '1',
-          name: 'John Doe',
-          class: 'Basic 1',
-          admissionNumber: 'STU001',
-          gender: 'Male',
-          guardianName: 'Jane Doe',
-          guardianPhone: '+2348012345678',
-        },
-        {
-          id: '2',
-          name: 'Mary Johnson',
-          class: 'Basic 2',
-          admissionNumber: 'STU002',
-          gender: 'Female',
-          guardianName: 'Robert Johnson',
-          guardianPhone: '+2348023456789',
-        },
-        {
-          id: '3',
-          name: 'David Smith',
-          class: 'Basic 3',
-          admissionNumber: 'STU003',
-          gender: 'Male',
-          guardianName: 'Sarah Smith',
-          guardianPhone: '+2348034567890',
-        },
-        {
-          id: '4',
-          name: 'Grace Okafor',
-          class: 'Basic 4',
-          admissionNumber: 'STU004',
-          gender: 'Female',
-          guardianName: 'Emmanuel Okafor',
-          guardianPhone: '+2348045678901',
-        },
-        {
-          id: '5',
-          name: 'Ibrahim Musa',
-          class: 'Basic 5',
-          admissionNumber: 'STU005',
-          gender: 'Male',
-          guardianName: 'Fatima Musa',
-          guardianPhone: '+2348056789012',
-        },
-        {
-          id: '6',
-          name: 'Chioma Eze',
-          class: 'Basic 6',
-          admissionNumber: 'STU006',
-          gender: 'Female',
-          guardianName: 'Chinedu Eze',
-          guardianPhone: '+2348067890123',
-        },
-      ];
-
-      // Apply class filter if not 'all'
-      let filteredStudents = mockStudents;
-      if (classFilter !== 'all') {
-        filteredStudents = mockStudents.filter(student => student.class === classFilter);
-      }
-
-      setStudents(filteredStudents);
-    } catch (error) {
-      console.error('Error fetching students:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   // Filter students based on search term
   const filteredStudents = students.filter(student =>

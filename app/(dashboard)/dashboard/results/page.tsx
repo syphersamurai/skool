@@ -49,176 +49,50 @@ export default function ResultsPage() {
   const statuses = ['draft', 'published'];
 
   useEffect(() => {
-    fetchResults();
-  }, [classFilter, termFilter, yearFilter, statusFilter]);
+    async function fetchResults() {
+      setLoading(true);
+      try {
+        let resultsQuery = collection(db, 'results');
 
-  async function fetchResults() {
-    setLoading(true);
-    try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockResults: Result[] = [
-        {
-          id: '1',
-          studentId: '1',
-          studentName: 'John Doe',
-          className: 'Basic 1',
-          term: 'First Term',
-          academicYear: '2023/2024',
-          subjects: [
-            { name: 'Mathematics', ca1: 15, ca2: 18, exam: 55, total: 88, grade: 'A', remarks: 'Excellent' },
-            { name: 'English', ca1: 12, ca2: 15, exam: 48, total: 75, grade: 'B', remarks: 'Good' },
-            { name: 'Science', ca1: 14, ca2: 16, exam: 50, total: 80, grade: 'A', remarks: 'Very Good' },
-            { name: 'Social Studies', ca1: 13, ca2: 14, exam: 45, total: 72, grade: 'B', remarks: 'Good' },
-          ],
-          totalScore: 315,
-          averageScore: 78.75,
-          position: 2,
-          classAverage: 72.5,
-          teacherRemarks: 'John is a hardworking student who shows great potential.',
-          principalRemarks: 'Keep up the good work, John!',
-          status: 'published',
-          createdAt: new Date('2023-12-15'),
-          updatedAt: new Date('2023-12-18'),
-        },
-        {
-          id: '2',
-          studentId: '7',
-          studentName: 'Amina Yusuf',
-          className: 'Basic 1',
-          term: 'First Term',
-          academicYear: '2023/2024',
-          subjects: [
-            { name: 'Mathematics', ca1: 18, ca2: 19, exam: 58, total: 95, grade: 'A', remarks: 'Excellent' },
-            { name: 'English', ca1: 15, ca2: 17, exam: 52, total: 84, grade: 'A', remarks: 'Very Good' },
-            { name: 'Science', ca1: 16, ca2: 18, exam: 54, total: 88, grade: 'A', remarks: 'Excellent' },
-            { name: 'Social Studies', ca1: 14, ca2: 16, exam: 50, total: 80, grade: 'A', remarks: 'Very Good' },
-          ],
-          totalScore: 347,
-          averageScore: 86.75,
-          position: 1,
-          classAverage: 72.5,
-          teacherRemarks: 'Amina is an exceptional student who consistently performs at the highest level.',
-          principalRemarks: 'Outstanding performance, Amina!',
-          status: 'published',
-          createdAt: new Date('2023-12-15'),
-          updatedAt: new Date('2023-12-18'),
-        },
-        {
-          id: '3',
-          studentId: '8',
-          studentName: 'Emeka Obi',
-          className: 'Basic 1',
-          term: 'First Term',
-          academicYear: '2023/2024',
-          subjects: [
-            { name: 'Mathematics', ca1: 10, ca2: 12, exam: 40, total: 62, grade: 'C', remarks: 'Average' },
-            { name: 'English', ca1: 11, ca2: 13, exam: 42, total: 66, grade: 'C', remarks: 'Average' },
-            { name: 'Science', ca1: 12, ca2: 14, exam: 44, total: 70, grade: 'B', remarks: 'Good' },
-            { name: 'Social Studies', ca1: 10, ca2: 12, exam: 40, total: 62, grade: 'C', remarks: 'Average' },
-          ],
-          totalScore: 260,
-          averageScore: 65,
-          position: 3,
-          classAverage: 72.5,
-          teacherRemarks: 'Emeka needs to put in more effort, especially in Mathematics and Social Studies.',
-          principalRemarks: 'There is room for improvement. Keep trying, Emeka!',
-          status: 'published',
-          createdAt: new Date('2023-12-15'),
-          updatedAt: new Date('2023-12-18'),
-        },
-        {
-          id: '4',
-          studentId: '9',
-          studentName: 'Funke Adeyemi',
-          className: 'Basic 2',
-          term: 'First Term',
-          academicYear: '2023/2024',
-          subjects: [
-            { name: 'Mathematics', ca1: 14, ca2: 16, exam: 50, total: 80, grade: 'A', remarks: 'Very Good' },
-            { name: 'English', ca1: 15, ca2: 17, exam: 52, total: 84, grade: 'A', remarks: 'Very Good' },
-            { name: 'Science', ca1: 13, ca2: 15, exam: 48, total: 76, grade: 'B', remarks: 'Good' },
-            { name: 'Social Studies', ca1: 14, ca2: 16, exam: 50, total: 80, grade: 'A', remarks: 'Very Good' },
-          ],
-          totalScore: 320,
-          averageScore: 80,
-          position: 1,
-          classAverage: 75,
-          teacherRemarks: 'Funke is a consistent performer who shows great understanding of concepts.',
-          principalRemarks: 'Well done, Funke! Keep up the good work.',
-          status: 'published',
-          createdAt: new Date('2023-12-15'),
-          updatedAt: new Date('2023-12-18'),
-        },
-        {
-          id: '5',
-          studentId: '10',
-          studentName: 'Hassan Mohammed',
-          className: 'Basic 3',
-          term: 'Second Term',
-          academicYear: '2023/2024',
-          subjects: [
-            { name: 'Mathematics', ca1: 16, ca2: 18, exam: 54, total: 88, grade: 'A', remarks: 'Excellent' },
-            { name: 'English', ca1: 14, ca2: 16, exam: 50, total: 80, grade: 'A', remarks: 'Very Good' },
-            { name: 'Science', ca1: 15, ca2: 17, exam: 52, total: 84, grade: 'A', remarks: 'Very Good' },
-            { name: 'Social Studies', ca1: 13, ca2: 15, exam: 48, total: 76, grade: 'B', remarks: 'Good' },
-          ],
-          totalScore: 328,
-          averageScore: 82,
-          position: 2,
-          classAverage: 78,
-          teacherRemarks: 'Hassan has shown significant improvement this term.',
-          principalRemarks: 'Great progress, Hassan! Keep it up.',
-          status: 'draft',
-          createdAt: new Date('2024-03-20'),
-          updatedAt: new Date('2024-03-22'),
-        },
-      ];
+        if (classFilter) {
+          resultsQuery = query(resultsQuery, where('className', '==', classFilter));
+        }
+        if (termFilter) {
+          resultsQuery = query(resultsQuery, where('term', '==', termFilter));
+        }
+        if (yearFilter) {
+          resultsQuery = query(resultsQuery, where('academicYear', '==', yearFilter));
+        }
+        if (statusFilter) {
+          resultsQuery = query(resultsQuery, where('status', '==', statusFilter));
+        }
 
-      // Apply filters
-      let filteredResults = [...mockResults];
-      
-      if (classFilter) {
-        filteredResults = filteredResults.filter(result => result.className === classFilter);
-      }
-      
-      if (termFilter) {
-        filteredResults = filteredResults.filter(result => result.term === termFilter);
-      }
-      
-      if (yearFilter) {
-        filteredResults = filteredResults.filter(result => result.academicYear === yearFilter);
-      }
-      
-      if (statusFilter) {
-        filteredResults = filteredResults.filter(result => result.status === statusFilter);
-      }
+        const querySnapshot = await getDocs(resultsQuery);
+        let fetchedResults = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Result[];
 
-      // Apply search
-      if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-        filteredResults = filteredResults.filter(result => 
-          result.studentName.toLowerCase().includes(term) ||
-          result.className.toLowerCase().includes(term)
-        );
-      }
+        // Apply search filter client-side
+        if (searchTerm) {
+          const term = searchTerm.toLowerCase();
+          fetchedResults = fetchedResults.filter(result => 
+            result.studentName.toLowerCase().includes(term) ||
+            result.className.toLowerCase().includes(term)
+          );
+        }
 
-      setResults(filteredResults);
-    } catch (error) {
-      console.error('Error fetching results:', error);
-    } finally {
-      setLoading(false);
+        setResults(fetchedResults);
+      } catch (error) {
+        console.error('Error fetching results:', error);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
+
+    fetchResults();
+  }, [classFilter, termFilter, yearFilter, statusFilter, searchTerm]);
 
   // Function to handle search input changes
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    // Debounce search for better performance in a real app
-    const timeoutId = setTimeout(() => {
-      fetchResults();
-    }, 500);
-    return () => clearTimeout(timeoutId);
   };
 
   return (

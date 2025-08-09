@@ -1,54 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { app, db } from '@/lib/firebase';
+import { useAuth, UserRole } from '@/lib/auth';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('parent'); // Default role
+  const [role, setRole] = useState<UserRole>(UserRole.PARENT);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { user, signUp, loading } = useAuth();
   const router = useRouter();
-  const auth = getAuth(app);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
-
     try {
-      // Create user with email and password
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      // Update profile with display name
-      await updateProfile(user, {
-        displayName: name
-      });
-      
-      // Store additional user data in Firestore
-      await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
-        name,
-        email,
-        role,
-        createdAt: new Date().toISOString(),
-      });
-      
-      console.log('User registered:', user);
-      router.push('/dashboard'); // Redirect to dashboard after registration
+      await signUp(email, password, name, role);
     } catch (error: any) {
-      console.error('Registration error:', error);
       setError(error.message || 'Failed to register. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -117,7 +96,7 @@ export default function RegisterPage() {
                 required
                 className="relative block w-full rounded-b-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                onChange={(e) => setRole(e.target.value as UserRole)}
               >
                 <option value="parent">Parent/Guardian</option>
                 <option value="teacher">Teacher</option>

@@ -4,19 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, query, where, orderBy } from 'firebase/firestore';
-
-interface Student {
-  id: string;
-  name: string;
-  admissionNumber: string;
-  class: string;
-}
-
-interface Subject {
-  id: string;
-  name: string;
-  maxScore: number;
-}
+import { studentsService, subjectsService, resultsService } from '@/lib/db';
+import { Student, Subject, GRADING_SYSTEM } from '@/lib/types';
 
 interface SubjectScore {
   subjectId: string;
@@ -87,19 +76,8 @@ export default function NewResultPage() {
 
   async function fetchStudents() {
     try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockStudents: Student[] = [
-        { id: '1', name: 'John Doe', admissionNumber: 'STU001', class: 'Basic 1' },
-        { id: '7', name: 'Amina Yusuf', admissionNumber: 'STU007', class: 'Basic 1' },
-        { id: '8', name: 'Emeka Obi', admissionNumber: 'STU008', class: 'Basic 1' },
-        { id: '9', name: 'Funke Adeyemi', admissionNumber: 'STU009', class: 'Basic 2' },
-        { id: '10', name: 'Hassan Mohammed', admissionNumber: 'STU010', class: 'Basic 3' },
-        { id: '11', name: 'Blessing Okonkwo', admissionNumber: 'STU011', class: 'Basic 2' },
-        { id: '12', name: 'Yusuf Ibrahim', admissionNumber: 'STU012', class: 'Basic 3' },
-        { id: '13', name: 'Chioma Eze', admissionNumber: 'STU013', class: 'Basic 2' },
-      ];
-      setStudents(mockStudents);
+      const studentsList = await studentsService.getAll();
+      setStudents(studentsList);
     } catch (error) {
       console.error('Error fetching students:', error);
     }
@@ -107,24 +85,30 @@ export default function NewResultPage() {
 
   async function fetchSubjects() {
     try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockSubjects: Subject[] = [
-        { id: '1', name: 'Mathematics', maxScore: 100 },
-        { id: '2', name: 'English', maxScore: 100 },
-        { id: '3', name: 'Science', maxScore: 100 },
-        { id: '4', name: 'Social Studies', maxScore: 100 },
-        { id: '5', name: 'Creative Arts', maxScore: 100 },
-        { id: '6', name: 'Physical Education', maxScore: 100 },
-      ];
-      setSubjects(mockSubjects);
+      const subjectsList = await subjectsService.getAll();
+      setSubjects(subjectsList.map(s => ({ id: s.id, name: s.name, maxScore: 100 }))); // Assuming maxScore is 100 for all subjects
     } catch (error) {
       console.error('Error fetching subjects:', error);
     }
   }
 
+  const getGradeAndRemarks = (totalScore: number) => {
+    let grade = '';
+    let remarks = '';
+
+    for (const g in GRADING_SYSTEM) {
+      const gradeRange = GRADING_SYSTEM[g as keyof typeof GRADING_SYSTEM];
+      if (totalScore >= gradeRange.min && totalScore <= gradeRange.max) {
+        grade = g;
+        remarks = gradeRange.description;
+        break;
+      }
+    }
+    return { grade, remarks };
+  };
+
   const handleScoreChange = (index: number, field: 'ca1' | 'ca2' | 'exam', value: string) => {
-    const newValue = value === '' ? 0 : Math.min(parseInt(value), field === 'exam' ? 70 : 15);
+    const newValue = value === '' ? 0 : parseInt(value);
     
     const updatedScores = [...subjectScores];
     updatedScores[index] = {
@@ -138,28 +122,7 @@ export default function NewResultPage() {
     const exam = updatedScores[index].exam;
     const total = ca1 + ca2 + exam;
     
-    let grade = '';
-    let remarks = '';
-    
-    if (total >= 70) {
-      grade = 'A';
-      remarks = 'Excellent';
-    } else if (total >= 60) {
-      grade = 'B';
-      remarks = 'Very Good';
-    } else if (total >= 50) {
-      grade = 'C';
-      remarks = 'Good';
-    } else if (total >= 45) {
-      grade = 'D';
-      remarks = 'Fair';
-    } else if (total >= 40) {
-      grade = 'E';
-      remarks = 'Pass';
-    } else {
-      grade = 'F';
-      remarks = 'Fail';
-    }
+    const { grade, remarks } = getGradeAndRemarks(total);
     
     updatedScores[index] = {
       ...updatedScores[index],
@@ -173,7 +136,7 @@ export default function NewResultPage() {
 
   const calculateTotalAndAverage = () => {
     const totalScore = subjectScores.reduce((sum, subject) => sum + subject.total, 0);
-    const averageScore = totalScore / subjectScores.length;
+    const averageScore = subjectScores.length > 0 ? totalScore / subjectScores.length : 0;
     return { totalScore, averageScore };
   };
 
@@ -214,41 +177,32 @@ export default function NewResultPage() {
       const { totalScore, averageScore } = calculateTotalAndAverage();
       const selectedStudentData = students.find(s => s.id === selectedStudent);
 
-      // In a real implementation, this would save to Firestore
-      // const resultData = {
-      //   studentId: selectedStudent,
-      //   studentName: selectedStudentData?.name || '',
-      //   className: selectedClass,
-      //   term: selectedTerm,
-      //   academicYear,
-      //   subjects: subjectScores,
-      //   totalScore,
-      //   averageScore,
-      //   position: 0, // This would be calculated later based on class ranking
-      //   classAverage: 0, // This would be calculated later based on all students
-      //   teacherRemarks,
-      //   principalRemarks,
-      //   status,
-      //   createdAt: new Date(),
-      //   updatedAt: new Date(),
-      // };
-      // 
-      // const docRef = await addDoc(collection(db, 'results'), resultData);
-      
-      // For demo purposes, we'll just simulate a successful save
-      console.log('Result would be saved with data:', {
+      const resultData = {
         studentId: selectedStudent,
-        studentName: selectedStudentData?.name || '',
-        className: selectedClass,
+        studentName: selectedStudentData?.firstName + ' ' + selectedStudentData?.lastName || '',
+        class: selectedClass,
         term: selectedTerm,
         academicYear,
-        subjects: subjectScores,
+        subjects: subjectScores.map(s => ({
+          subjectName: s.subjectName,
+          firstTest: s.ca1,
+          secondTest: s.ca2,
+          exam: s.exam,
+          total: s.total,
+          grade: s.grade,
+          remarks: s.remarks,
+        })),
         totalScore,
         averageScore,
-        teacherRemarks,
-        principalRemarks,
+        position: 0, // This would be calculated later based on class ranking
+        totalStudents: 0, // This would be calculated later
+        classAverage: 0, // This would be calculated later
+        teacherComment: teacherRemarks,
+        principalComment: principalRemarks,
         status,
-      });
+      };
+      
+      await resultsService.create(resultData);
       
       setSuccess(true);
       
@@ -328,7 +282,7 @@ export default function NewResultPage() {
                     <option value="">Select a student</option>
                     {filteredStudents.map((student) => (
                       <option key={student.id} value={student.id}>
-                        {student.name} ({student.admissionNumber})
+                        {student.firstName} {student.lastName} ({student.admissionNumber})
                       </option>
                     ))}
                   </select>

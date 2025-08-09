@@ -512,7 +512,7 @@ export default function AttendanceReportsPage() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="className" />
                 <YAxis domain={[0, 100]} />
-                <Tooltip formatter={(value) => `${Number(value).toFixed(2)}%`} />
+                <Tooltip formatter={(value: any) => `${Number(value).toFixed(2)}%`} />
                 <Legend />
                 <Bar dataKey="averageAttendanceRate" name="Average Attendance Rate (%)" fill="#8884d8" />
               </BarChart>
@@ -530,7 +530,10 @@ export default function AttendanceReportsPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={(props) => {
+                    const { name, percent } = props;
+                    return percent ? `${name}: ${(percent * 100).toFixed(0)}%` : '';
+                  }}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="count"
@@ -540,7 +543,7 @@ export default function AttendanceReportsPage() {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => value} />
+                <Tooltip formatter={(value: any) => value} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -559,7 +562,7 @@ export default function AttendanceReportsPage() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis domain={[0, 100]} />
-              <Tooltip formatter={(value) => `${Number(value).toFixed(2)}%`} />
+              <Tooltip formatter={(value: any) => `${Number(value).toFixed(2)}%`} />
               <Legend />
               <Bar dataKey="attendanceRate" name="Attendance Rate (%)" fill="#82ca9d" />
             </BarChart>

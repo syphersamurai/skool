@@ -41,87 +41,9 @@ export default function EditAttendancePage({ params }: { params: { id: string } 
   async function fetchAttendanceDetails() {
     setLoading(true);
     try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockAttendanceRecords: Record<string, AttendanceRecord> = {
-        '1': {
-          id: '1',
-          date: new Date('2023-12-01'),
-          className: 'Basic 1',
-          totalStudents: 10,
-          presentCount: 8,
-          absentCount: 2,
-          attendanceRate: 80,
-          recordedBy: 'John Smith',
-          status: 'completed',
-          studentRecords: [
-            { studentId: '1', studentName: 'John Doe', rollNumber: 'B1001', status: 'present', note: '' },
-            { studentId: '2', studentName: 'Jane Smith', rollNumber: 'B1002', status: 'present', note: '' },
-            { studentId: '3', studentName: 'Michael Johnson', rollNumber: 'B1003', status: 'present', note: '' },
-            { studentId: '4', studentName: 'Emily Davis', rollNumber: 'B1004', status: 'present', note: '' },
-            { studentId: '5', studentName: 'David Wilson', rollNumber: 'B1005', status: 'absent', note: 'Sick leave' },
-            { studentId: '6', studentName: 'Sarah Brown', rollNumber: 'B1006', status: 'present', note: '' },
-            { studentId: '7', studentName: 'Amina Yusuf', rollNumber: 'B1007', status: 'present', note: '' },
-            { studentId: '8', studentName: 'Chinedu Okonkwo', rollNumber: 'B1008', status: 'present', note: '' },
-            { studentId: '9', studentName: 'Fatima Ahmed', rollNumber: 'B1009', status: 'present', note: '' },
-            { studentId: '10', studentName: 'Oluwaseun Adeyemi', rollNumber: 'B1010', status: 'absent', note: 'Family emergency' },
-          ],
-          createdAt: new Date('2023-12-01T08:30:00'),
-        },
-        '6': {
-          id: '6',
-          date: new Date(),
-          className: 'Basic 3',
-          totalStudents: 10,
-          presentCount: 0,
-          absentCount: 0,
-          attendanceRate: 0,
-          recordedBy: 'Robert Williams',
-          status: 'pending',
-          studentRecords: [
-            { studentId: '21', studentName: 'Ade Johnson', rollNumber: 'B3001', status: 'present', note: '' },
-            { studentId: '22', studentName: 'Blessing Okafor', rollNumber: 'B3002', status: 'present', note: '' },
-            { studentId: '23', studentName: 'Chisom Eze', rollNumber: 'B3003', status: 'present', note: '' },
-            { studentId: '24', studentName: 'Damilola Adeyemi', rollNumber: 'B3004', status: 'present', note: '' },
-            { studentId: '25', studentName: 'Emmanuel Obi', rollNumber: 'B3005', status: 'present', note: '' },
-            { studentId: '26', studentName: 'Folake Adeleke', rollNumber: 'B3006', status: 'present', note: '' },
-            { studentId: '27', studentName: 'Gabriel Nnamdi', rollNumber: 'B3007', status: 'present', note: '' },
-            { studentId: '28', studentName: 'Hannah Ibrahim', rollNumber: 'B3008', status: 'present', note: '' },
-            { studentId: '29', studentName: 'Isaac Okonkwo', rollNumber: 'B3009', status: 'present', note: '' },
-            { studentId: '30', studentName: 'Joy Afolayan', rollNumber: 'B3010', status: 'present', note: '' },
-          ],
-          createdAt: new Date(),
-        },
-        '7': {
-          id: '7',
-          date: new Date(),
-          className: 'Basic 1',
-          totalStudents: 10,
-          presentCount: 0,
-          absentCount: 0,
-          attendanceRate: 0,
-          recordedBy: 'John Smith',
-          status: 'pending',
-          studentRecords: [
-            { studentId: '1', studentName: 'John Doe', rollNumber: 'B1001', status: 'present', note: '' },
-            { studentId: '2', studentName: 'Jane Smith', rollNumber: 'B1002', status: 'present', note: '' },
-            { studentId: '3', studentName: 'Michael Johnson', rollNumber: 'B1003', status: 'present', note: '' },
-            { studentId: '4', studentName: 'Emily Davis', rollNumber: 'B1004', status: 'present', note: '' },
-            { studentId: '5', studentName: 'David Wilson', rollNumber: 'B1005', status: 'present', note: '' },
-            { studentId: '6', studentName: 'Sarah Brown', rollNumber: 'B1006', status: 'present', note: '' },
-            { studentId: '7', studentName: 'Amina Yusuf', rollNumber: 'B1007', status: 'present', note: '' },
-            { studentId: '8', studentName: 'Chinedu Okonkwo', rollNumber: 'B1008', status: 'present', note: '' },
-            { studentId: '9', studentName: 'Fatima Ahmed', rollNumber: 'B1009', status: 'present', note: '' },
-            { studentId: '10', studentName: 'Oluwaseun Adeyemi', rollNumber: 'B1010', status: 'present', note: '' },
-          ],
-          createdAt: new Date(),
-        },
-        // Add more mock records as needed
-      };
-
-      const recordDetails = mockAttendanceRecords[params.id];
-      if (recordDetails) {
-        setAttendanceRecord(recordDetails);
+      const attendanceData = await attendanceService.getById(params.id);
+      if (attendanceData) {
+        setAttendanceRecord(attendanceData);
       } else {
         setError('Attendance record not found');
       }
@@ -209,22 +131,16 @@ export default function EditAttendancePage({ params }: { params: { id: string } 
         status: 'completed' as const,
       };
       
-      // In a real implementation, this would update Firestore
-      // For demo purposes, we'll just simulate a delay
-      /*
-      await updateDoc(doc(db, 'attendance', params.id), {
+      await attendanceService.update(params.id, {
         totalStudents,
         presentCount,
         absentCount,
         attendanceRate,
         status: 'completed',
         studentRecords: updatedAttendanceRecord.studentRecords,
-        updatedAt: serverTimestamp(),
       });
-      */
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      alert('Attendance updated successfully!');
       router.push(`/dashboard/attendance/${params.id}`);
     } catch (error) {
       console.error('Error updating attendance:', error);

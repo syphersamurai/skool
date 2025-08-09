@@ -9,13 +9,21 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@paystack/inline-js": "^2.22.7",
+    "@types/react-big-calendar": "^1.16.2",
+    "@types/recharts": "^2.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "firebase": "^12.1.0",
+    "firebase-admin": "^13.4.0",
+    "jspdf": "^3.0.1",
     "lucide-react": "^0.537.0",
     "next": "15.4.6",
     "react": "19.1.0",
+    "react-big-calendar": "^1.19.4",
     "react-dom": "19.1.0",
+    "recharts": "^3.1.2",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {

@@ -36,20 +36,13 @@ export default function NewStudentPage() {
     setError('');
 
     try {
-      // In a real implementation, this would add to Firestore
-      // For demo purposes, we'll simulate a successful addition
+      const docRef = await addDoc(collection(db, 'students'), {
+        ...formData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        status: 'active'
+      });
       
-      // const docRef = await addDoc(collection(db, 'students'), {
-      //   ...formData,
-      //   createdAt: serverTimestamp(),
-      //   updatedAt: serverTimestamp(),
-      //   status: 'active'
-      // });
-
-      // Simulate a delay for the demo
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Success message and redirect
       alert('Student added successfully!');
       router.push('/dashboard/students');
     } catch (err) {

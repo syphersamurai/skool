@@ -49,65 +49,9 @@ export default function PrintReportCardPage({ params }: { params: { id: string }
   async function fetchResultDetails() {
     setLoading(true);
     try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockResults: Record<string, Result> = {
-        '1': {
-          id: '1',
-          studentId: '1',
-          studentName: 'John Doe',
-          className: 'Basic 1',
-          term: 'First Term',
-          academicYear: '2023/2024',
-          subjects: [
-            { name: 'Mathematics', ca1: 15, ca2: 18, exam: 55, total: 88, grade: 'A', remarks: 'Excellent' },
-            { name: 'English', ca1: 12, ca2: 15, exam: 48, total: 75, grade: 'B', remarks: 'Good' },
-            { name: 'Science', ca1: 14, ca2: 16, exam: 50, total: 80, grade: 'A', remarks: 'Very Good' },
-            { name: 'Social Studies', ca1: 13, ca2: 14, exam: 45, total: 72, grade: 'B', remarks: 'Good' },
-            { name: 'Creative Arts', ca1: 14, ca2: 15, exam: 50, total: 79, grade: 'B', remarks: 'Good' },
-            { name: 'Physical Education', ca1: 15, ca2: 15, exam: 60, total: 90, grade: 'A', remarks: 'Excellent' },
-          ],
-          totalScore: 484,
-          averageScore: 80.67,
-          position: 2,
-          classAverage: 72.5,
-          teacherRemarks: 'John is a hardworking student who shows great potential.',
-          principalRemarks: 'Keep up the good work, John!',
-          status: 'published',
-          createdAt: new Date('2023-12-15'),
-          updatedAt: new Date('2023-12-18'),
-        },
-        '2': {
-          id: '2',
-          studentId: '7',
-          studentName: 'Amina Yusuf',
-          className: 'Basic 1',
-          term: 'First Term',
-          academicYear: '2023/2024',
-          subjects: [
-            { name: 'Mathematics', ca1: 18, ca2: 19, exam: 58, total: 95, grade: 'A', remarks: 'Excellent' },
-            { name: 'English', ca1: 15, ca2: 17, exam: 52, total: 84, grade: 'A', remarks: 'Very Good' },
-            { name: 'Science', ca1: 16, ca2: 18, exam: 54, total: 88, grade: 'A', remarks: 'Excellent' },
-            { name: 'Social Studies', ca1: 14, ca2: 16, exam: 50, total: 80, grade: 'A', remarks: 'Very Good' },
-            { name: 'Creative Arts', ca1: 15, ca2: 17, exam: 53, total: 85, grade: 'A', remarks: 'Very Good' },
-            { name: 'Physical Education', ca1: 15, ca2: 15, exam: 62, total: 92, grade: 'A', remarks: 'Excellent' },
-          ],
-          totalScore: 524,
-          averageScore: 87.33,
-          position: 1,
-          classAverage: 72.5,
-          teacherRemarks: 'Amina is an exceptional student who consistently performs at the highest level.',
-          principalRemarks: 'Outstanding performance, Amina!',
-          status: 'published',
-          createdAt: new Date('2023-12-15'),
-          updatedAt: new Date('2023-12-18'),
-        },
-        // Add more mock results as needed
-      };
-
-      const resultDetails = mockResults[params.id];
-      if (resultDetails) {
-        setResult(resultDetails);
+      const resultData = await resultsService.getById(params.id);
+      if (resultData) {
+        setResult(resultData);
       } else {
         setError('Result not found');
       }

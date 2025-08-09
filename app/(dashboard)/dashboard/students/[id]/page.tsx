@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import PromotionModal from '@/components/student/PromotionModal';
+import DocumentManager from '@/components/student/DocumentManager';
 
 interface Student {
   id: string;
@@ -25,6 +27,7 @@ export default function StudentDetailPage({ params }: { params: { id: string } }
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showPromotionModal, setShowPromotionModal] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -34,104 +37,11 @@ export default function StudentDetailPage({ params }: { params: { id: string } }
   async function fetchStudentDetails() {
     setLoading(true);
     try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockStudents: Record<string, Student> = {
-        '1': {
-          id: '1',
-          name: 'John Doe',
-          class: 'Basic 1',
-          admissionNumber: 'STU001',
-          gender: 'Male',
-          dateOfBirth: '2015-05-12',
-          guardianName: 'Jane Doe',
-          guardianPhone: '+2348012345678',
-          guardianEmail: 'jane.doe@example.com',
-          address: '123 Main Street, Lagos, Nigeria',
-          healthInformation: 'No known allergies',
-          status: 'active',
-          createdAt: { toDate: () => new Date('2023-01-15') }
-        },
-        '2': {
-          id: '2',
-          name: 'Mary Johnson',
-          class: 'Basic 2',
-          admissionNumber: 'STU002',
-          gender: 'Female',
-          dateOfBirth: '2014-08-23',
-          guardianName: 'Robert Johnson',
-          guardianPhone: '+2348023456789',
-          guardianEmail: 'robert.johnson@example.com',
-          address: '456 Oak Avenue, Abuja, Nigeria',
-          healthInformation: 'Mild asthma, carries inhaler',
-          status: 'active',
-          createdAt: { toDate: () => new Date('2023-02-10') }
-        },
-        '3': {
-          id: '3',
-          name: 'David Smith',
-          class: 'Basic 3',
-          admissionNumber: 'STU003',
-          gender: 'Male',
-          dateOfBirth: '2013-11-05',
-          guardianName: 'Sarah Smith',
-          guardianPhone: '+2348034567890',
-          guardianEmail: 'sarah.smith@example.com',
-          address: '789 Elm Street, Port Harcourt, Nigeria',
-          healthInformation: 'Peanut allergy',
-          status: 'active',
-          createdAt: { toDate: () => new Date('2023-01-20') }
-        },
-        '4': {
-          id: '4',
-          name: 'Grace Okafor',
-          class: 'Basic 4',
-          admissionNumber: 'STU004',
-          gender: 'Female',
-          dateOfBirth: '2012-04-18',
-          guardianName: 'Emmanuel Okafor',
-          guardianPhone: '+2348045678901',
-          guardianEmail: 'emmanuel.okafor@example.com',
-          address: '101 Pine Road, Enugu, Nigeria',
-          healthInformation: 'Wears glasses for reading',
-          status: 'active',
-          createdAt: { toDate: () => new Date('2022-09-05') }
-        },
-        '5': {
-          id: '5',
-          name: 'Ibrahim Musa',
-          class: 'Basic 5',
-          admissionNumber: 'STU005',
-          gender: 'Male',
-          dateOfBirth: '2011-07-30',
-          guardianName: 'Fatima Musa',
-          guardianPhone: '+2348056789012',
-          guardianEmail: 'fatima.musa@example.com',
-          address: '202 Cedar Lane, Kano, Nigeria',
-          healthInformation: 'No health issues',
-          status: 'active',
-          createdAt: { toDate: () => new Date('2022-08-15') }
-        },
-        '6': {
-          id: '6',
-          name: 'Chioma Eze',
-          class: 'Basic 6',
-          admissionNumber: 'STU006',
-          gender: 'Female',
-          dateOfBirth: '2010-12-03',
-          guardianName: 'Chinedu Eze',
-          guardianPhone: '+2348067890123',
-          guardianEmail: 'chinedu.eze@example.com',
-          address: '303 Maple Drive, Calabar, Nigeria',
-          healthInformation: 'Mild eczema',
-          status: 'active',
-          createdAt: { toDate: () => new Date('2022-07-20') }
-        }
-      };
+      const docRef = doc(db, 'students', params.id);
+      const docSnap = await getDoc(docRef);
 
-      const studentData = mockStudents[params.id];
-      if (studentData) {
-        setStudent(studentData);
+      if (docSnap.exists()) {
+        setStudent({ id: docSnap.id, ...docSnap.data() } as Student);
       } else {
         setError('Student not found');
       }
@@ -142,6 +52,26 @@ export default function StudentDetailPage({ params }: { params: { id: string } }
       setLoading(false);
     }
   }
+
+  const handlePromotionSuccess = () => {
+    setShowPromotionModal(false);
+    fetchStudentDetails(); // Refetch data to show updated class
+  };
+
+  const handleTransfer = async () => {
+    if (!student) return;
+    if (confirm('Are you sure you want to transfer this student? This action cannot be undone.')) {
+      try {
+        const studentRef = doc(db, 'students', student.id);
+        await updateDoc(studentRef, { status: 'transferred', updatedAt: new Date() });
+        alert('Student transferred successfully!');
+        router.push('/dashboard/students');
+      } catch (error) {
+        console.error('Error transferring student:', error);
+        alert('Failed to transfer student.');
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -170,6 +100,28 @@ export default function StudentDetailPage({ params }: { params: { id: string } }
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">{student.name}</h2>
         <div className="flex space-x-4">
+          import { generateStudentIdCard } from '@/lib/pdf';
+
+// ... (rest of the component)
+
+          <button
+            onClick={handleTransfer}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+          >
+            Transfer
+          </button>
+          <button
+            onClick={() => generateStudentIdCard(student)}
+            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+          >
+            Generate ID Card
+          </button>
+          <button
+            onClick={() => setShowPromotionModal(true)}
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+          >
+            Promote/Graduate
+          </button>
           <button
             onClick={() => router.push(`/dashboard/students/${student.id}/edit`)}
             className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
@@ -259,32 +211,22 @@ export default function StudentDetailPage({ params }: { params: { id: string } }
             <p>{student.healthInformation || 'No health information provided'}</p>
           </div>
         </div>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="mt-6 bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium mb-4">Quick Actions</h3>
-        <div className="flex flex-wrap gap-4">
-          <button
-            onClick={() => router.push(`/dashboard/students/${student.id}/fees`)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-          >
-            View Fees
-          </button>
-          <button
-            onClick={() => router.push(`/dashboard/students/${student.id}/results`)}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-          >
-            View Results
-          </button>
-          <button
-            onClick={() => router.push(`/dashboard/students/${student.id}/attendance`)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Attendance Record
-          </button>
+        {/* Documents Section */}
+        <div className="p-6 border-t">
+          <h3 className="text-lg font-medium mb-4">Documents</h3>
+          <DocumentManager studentId={student.id} />
         </div>
       </div>
+
+      {showPromotionModal && (
+        <PromotionModal
+          studentId={student.id}
+          currentClass={student.class}
+          onClose={() => setShowPromotionModal(false)}
+          onSuccess={handlePromotionSuccess}
+        />
+      )}
     </div>
   );
 }

@@ -21,7 +21,7 @@ export default function Home() {
       console.log("Document written with ID: ", docRef.id);
     } catch (error) {
       console.error("Error adding document: ", error);
-      setMessage(`Error: ${error.message}`);
+      setMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }

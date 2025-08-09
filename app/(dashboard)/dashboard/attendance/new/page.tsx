@@ -49,10 +49,8 @@ export default function TakeAttendancePage() {
   async function fetchClasses() {
     setLoading(true);
     try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockClasses = ['Basic 1', 'Basic 2', 'Basic 3', 'Basic 4', 'Basic 5', 'Basic 6'];
-      setClasses(mockClasses);
+      const classesList = await classesService.getAll();
+      setClasses(classesList.map(cls => cls.name));
     } catch (error) {
       console.error('Error fetching classes:', error);
       setError('Failed to load classes');
@@ -64,39 +62,14 @@ export default function TakeAttendancePage() {
   async function fetchStudentsByClass(className: string) {
     setLoading(true);
     try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockStudents: Student[] = [
-        { id: '1', name: 'John Doe', rollNumber: 'B1001', className: 'Basic 1' },
-        { id: '2', name: 'Jane Smith', rollNumber: 'B1002', className: 'Basic 1' },
-        { id: '3', name: 'Michael Johnson', rollNumber: 'B1003', className: 'Basic 1' },
-        { id: '4', name: 'Emily Davis', rollNumber: 'B1004', className: 'Basic 1' },
-        { id: '5', name: 'David Wilson', rollNumber: 'B1005', className: 'Basic 1' },
-        { id: '6', name: 'Sarah Brown', rollNumber: 'B1006', className: 'Basic 1' },
-        { id: '7', name: 'Amina Yusuf', rollNumber: 'B1007', className: 'Basic 1' },
-        { id: '8', name: 'Chinedu Okonkwo', rollNumber: 'B1008', className: 'Basic 1' },
-        { id: '9', name: 'Fatima Ahmed', rollNumber: 'B1009', className: 'Basic 1' },
-        { id: '10', name: 'Oluwaseun Adeyemi', rollNumber: 'B1010', className: 'Basic 1' },
-        { id: '11', name: 'Alex Turner', rollNumber: 'B2001', className: 'Basic 2' },
-        { id: '12', name: 'Olivia Parker', rollNumber: 'B2002', className: 'Basic 2' },
-        { id: '13', name: 'Mohammed Ali', rollNumber: 'B2003', className: 'Basic 2' },
-        { id: '14', name: 'Grace Okafor', rollNumber: 'B2004', className: 'Basic 2' },
-        { id: '15', name: 'Daniel Lee', rollNumber: 'B2005', className: 'Basic 2' },
-        { id: '16', name: 'Sophia Chen', rollNumber: 'B2006', className: 'Basic 2' },
-        { id: '17', name: 'Tunde Bakare', rollNumber: 'B2007', className: 'Basic 2' },
-        { id: '18', name: 'Zainab Ibrahim', rollNumber: 'B2008', className: 'Basic 2' },
-        { id: '19', name: 'Emeka Eze', rollNumber: 'B2009', className: 'Basic 2' },
-        { id: '20', name: 'Ngozi Obi', rollNumber: 'B2010', className: 'Basic 2' },
-      ];
-
-      const filteredStudents = mockStudents.filter(student => student.className === className);
+      const studentsList = await studentsService.getWhere('class', '==', className);
       
       setFormData(prev => ({
         ...prev,
-        students: filteredStudents.map(student => ({
+        students: studentsList.map(student => ({
           id: student.id,
-          name: student.name,
-          rollNumber: student.rollNumber,
+          name: `${student.firstName} ${student.lastName}`,
+          rollNumber: student.admissionNumber,
           status: 'present', // Default status
           note: '',
         })),
@@ -176,20 +149,11 @@ export default function TakeAttendancePage() {
           status: student.status,
           note: student.note,
         })),
-        createdAt: new Date(),
       };
       
-      // In a real implementation, this would save to Firestore
-      // For demo purposes, we'll just simulate a delay
-      /*
-      await addDoc(collection(db, 'attendance'), {
-        ...attendanceRecord,
-        createdAt: serverTimestamp(),
-      });
-      */
+      await attendanceService.create(attendanceRecord);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      alert('Attendance recorded successfully!');
       router.push('/dashboard/attendance');
     } catch (error) {
       console.error('Error saving attendance:', error);

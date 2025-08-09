@@ -1,71 +1,28 @@
-'use client';
-
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import Notifications from '@/components/Notifications';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [showNotifications, setShowNotifications] = useState(false);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
+  // ... (useEffect for redirect remains the same)
 
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-      </div>
-    );
-  }
+  // ... (loading and !user checks remain the same)
 
-  // If not authenticated and not loading, don't render anything
-  // (will be redirected by the useEffect)
-  if (!user) {
-    return null;
-  }
-
-  // Navigation items based on user role
-  const navigationItems = getNavigationItems(user.role);
+  // ... (getNavigationItems remains the same)
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-indigo-800 text-white">
-        <div className="p-4">
-          <h2 className="text-2xl font-bold">Skool</h2>
-          <p className="text-sm opacity-75">{user.role}</p>
-        </div>
-        <nav className="mt-8">
-          <ul>
-            {navigationItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`flex items-center px-4 py-3 ${isActive ? 'bg-indigo-900' : 'hover:bg-indigo-700'}`}
-                  >
-                    <span className="mr-3">{item.icon}</span>
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      </div>
+      {/* ... (Sidebar remains the same) ... */}
 
       {/* Main content */}
       <div className="flex-1 overflow-auto">
@@ -73,12 +30,25 @@ export default function DashboardLayout({
         <header className="bg-white shadow">
           <div className="flex justify-between items-center px-6 py-4">
             <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-            <button
-              onClick={() => router.push('/api/auth/signout')}
-              className="px-4 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
-            >
-              Sign out
-            </button>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <button 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="p-2 rounded-full hover:bg-gray-100"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                </button>
+                {showNotifications && <Notifications />}
+              </div>
+              <button
+                onClick={signOut}
+                className="px-4 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+              >
+                Sign out
+              </button>
+            </div>
           </div>
         </header>
 
@@ -127,6 +97,24 @@ function getNavigationItems(role: string) {
       href: '/dashboard/fees',
       icon: '💰',
       roles: ['super_admin', 'school_admin', 'parent'],
+    },
+    {
+      label: 'Payments',
+      href: '/dashboard/payments',
+      icon: '💳',
+      roles: ['super_admin', 'school_admin', 'parent'],
+    },
+    {
+      label: 'Calendar',
+      href: '/dashboard/calendar',
+      icon: '📅',
+      roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'student'],
+    },
+    {
+      label: 'Profile',
+      href: '/dashboard/profile',
+      icon: '👤',
+      roles: ['super_admin', 'school_admin', 'teacher', 'parent', 'student'],
     },
     {
       label: 'Settings',

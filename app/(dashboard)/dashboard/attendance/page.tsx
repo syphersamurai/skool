@@ -32,111 +32,54 @@ export default function AttendancePage() {
   const [pendingRecords, setPendingRecords] = useState(0);
 
   useEffect(() => {
-    fetchAttendanceRecords();
-  }, []);
+    async function fetchAttendanceRecords() {
+      setLoading(true);
+      try {
+        let attendanceQuery = collection(db, 'attendance');
 
-  async function fetchAttendanceRecords() {
-    setLoading(true);
-    try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockAttendanceRecords: AttendanceRecord[] = [
-        {
-          id: '1',
-          date: new Date('2023-12-01'),
-          className: 'Basic 1',
-          totalStudents: 25,
-          presentCount: 23,
-          absentCount: 2,
-          attendanceRate: 92,
-          recordedBy: 'John Smith',
-          status: 'completed',
-        },
-        {
-          id: '2',
-          date: new Date('2023-12-01'),
-          className: 'Basic 2',
-          totalStudents: 28,
-          presentCount: 25,
-          absentCount: 3,
-          attendanceRate: 89.3,
-          recordedBy: 'Mary Johnson',
-          status: 'completed',
-        },
-        {
-          id: '3',
-          date: new Date('2023-12-02'),
-          className: 'Basic 3',
-          totalStudents: 30,
-          presentCount: 27,
-          absentCount: 3,
-          attendanceRate: 90,
-          recordedBy: 'Robert Williams',
-          status: 'completed',
-        },
-        {
-          id: '4',
-          date: new Date('2023-12-02'),
-          className: 'Basic 1',
-          totalStudents: 25,
-          presentCount: 24,
-          absentCount: 1,
-          attendanceRate: 96,
-          recordedBy: 'John Smith',
-          status: 'completed',
-        },
-        {
-          id: '5',
-          date: new Date('2023-12-03'),
-          className: 'Basic 2',
-          totalStudents: 28,
-          presentCount: 26,
-          absentCount: 2,
-          attendanceRate: 92.9,
-          recordedBy: 'Mary Johnson',
-          status: 'completed',
-        },
-        {
-          id: '6',
-          date: new Date(),
-          className: 'Basic 3',
-          totalStudents: 30,
-          presentCount: 0,
-          absentCount: 0,
-          attendanceRate: 0,
-          recordedBy: 'Robert Williams',
-          status: 'pending',
-        },
-        {
-          id: '7',
-          date: new Date(),
-          className: 'Basic 1',
-          totalStudents: 25,
-          presentCount: 0,
-          absentCount: 0,
-          attendanceRate: 0,
-          recordedBy: 'John Smith',
-          status: 'pending',
-        },
-      ];
+        if (classFilter) {
+          attendanceQuery = query(attendanceQuery, where('class', '==', classFilter));
+        }
+        if (dateFilter) {
+          attendanceQuery = query(attendanceQuery, where('date', '==', dateFilter));
+        }
+        if (statusFilter) {
+          attendanceQuery = query(attendanceQuery, where('status', '==', statusFilter));
+        }
 
-      setAttendanceRecords(mockAttendanceRecords);
+        const querySnapshot = await getDocs(attendanceQuery);
+        let fetchedRecords = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AttendanceRecord[];
+
+        // Apply search filter client-side
+        if (searchTerm) {
+          const term = searchTerm.toLowerCase();
+          fetchedRecords = fetchedRecords.filter(record => 
+            record.className.toLowerCase().includes(term) ||
+            record.recordedBy.toLowerCase().includes(term)
+          );
+        }
+
+        setAttendanceRecords(fetchedRecords);
       
-      // Calculate summary stats
-      const completedRecords = mockAttendanceRecords.filter(record => record.status === 'completed');
-      const avgRate = completedRecords.length > 0 
-        ? completedRecords.reduce((sum, record) => sum + record.attendanceRate, 0) / completedRecords.length 
-        : 0;
-      
-      setAverageAttendanceRate(avgRate);
-      setTotalRecords(mockAttendanceRecords.length);
-      setPendingRecords(mockAttendanceRecords.filter(record => record.status === 'pending').length);
-    } catch (error) {
-      console.error('Error fetching attendance records:', error);
-    } finally {
-      setLoading(false);
+        // Calculate summary stats
+        const completedRecords = fetchedRecords.filter(record => record.status === 'completed');
+        const avgRate = completedRecords.length > 0 
+          ? completedRecords.reduce((sum, record) => sum + record.attendanceRate, 0) / completedRecords.length 
+          : 0;
+        
+        setAverageAttendanceRate(avgRate);
+        setTotalRecords(fetchedRecords.length);
+        setPendingRecords(fetchedRecords.filter(record => record.status === 'pending').length);
+
+      } catch (error) {
+        console.error('Error fetching attendance records:', error);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
+
+    fetchAttendanceRecords();
+  }, [classFilter, dateFilter, statusFilter, searchTerm]);
 
   // Filter attendance records based on search term and filters
   const filteredAttendanceRecords = attendanceRecords.filter(record => {

@@ -47,98 +47,11 @@ export default function EditStudentPage({ params }: { params: { id: string } }) 
   async function fetchStudentDetails() {
     setLoading(true);
     try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockStudents: Record<string, Student> = {
-        '1': {
-          id: '1',
-          name: 'John Doe',
-          class: 'Basic 1',
-          admissionNumber: 'STU001',
-          gender: 'Male',
-          dateOfBirth: '2015-05-12',
-          guardianName: 'Jane Doe',
-          guardianPhone: '+2348012345678',
-          guardianEmail: 'jane.doe@example.com',
-          address: '123 Main Street, Lagos, Nigeria',
-          healthInformation: 'No known allergies',
-          status: 'active',
-        },
-        '2': {
-          id: '2',
-          name: 'Mary Johnson',
-          class: 'Basic 2',
-          admissionNumber: 'STU002',
-          gender: 'Female',
-          dateOfBirth: '2014-08-23',
-          guardianName: 'Robert Johnson',
-          guardianPhone: '+2348023456789',
-          guardianEmail: 'robert.johnson@example.com',
-          address: '456 Oak Avenue, Abuja, Nigeria',
-          healthInformation: 'Mild asthma, carries inhaler',
-          status: 'active',
-        },
-        '3': {
-          id: '3',
-          name: 'David Smith',
-          class: 'Basic 3',
-          admissionNumber: 'STU003',
-          gender: 'Male',
-          dateOfBirth: '2013-11-05',
-          guardianName: 'Sarah Smith',
-          guardianPhone: '+2348034567890',
-          guardianEmail: 'sarah.smith@example.com',
-          address: '789 Elm Street, Port Harcourt, Nigeria',
-          healthInformation: 'Peanut allergy',
-          status: 'active',
-        },
-        '4': {
-          id: '4',
-          name: 'Grace Okafor',
-          class: 'Basic 4',
-          admissionNumber: 'STU004',
-          gender: 'Female',
-          dateOfBirth: '2012-04-18',
-          guardianName: 'Emmanuel Okafor',
-          guardianPhone: '+2348045678901',
-          guardianEmail: 'emmanuel.okafor@example.com',
-          address: '101 Pine Road, Enugu, Nigeria',
-          healthInformation: 'Wears glasses for reading',
-          status: 'active',
-        },
-        '5': {
-          id: '5',
-          name: 'Ibrahim Musa',
-          class: 'Basic 5',
-          admissionNumber: 'STU005',
-          gender: 'Male',
-          dateOfBirth: '2011-07-30',
-          guardianName: 'Fatima Musa',
-          guardianPhone: '+2348056789012',
-          guardianEmail: 'fatima.musa@example.com',
-          address: '202 Cedar Lane, Kano, Nigeria',
-          healthInformation: 'No health issues',
-          status: 'active',
-        },
-        '6': {
-          id: '6',
-          name: 'Chioma Eze',
-          class: 'Basic 6',
-          admissionNumber: 'STU006',
-          gender: 'Female',
-          dateOfBirth: '2010-12-03',
-          guardianName: 'Chinedu Eze',
-          guardianPhone: '+2348067890123',
-          guardianEmail: 'chinedu.eze@example.com',
-          address: '303 Maple Drive, Calabar, Nigeria',
-          healthInformation: 'Mild eczema',
-          status: 'active',
-        }
-      };
+      const docRef = doc(db, 'students', params.id);
+      const docSnap = await getDoc(docRef);
 
-      const studentData = mockStudents[params.id];
-      if (studentData) {
-        setFormData(studentData);
+      if (docSnap.exists()) {
+        setFormData({ id: docSnap.id, ...docSnap.data() } as Student);
       } else {
         setError('Student not found');
       }
@@ -164,19 +77,12 @@ export default function EditStudentPage({ params }: { params: { id: string } }) 
     setError('');
 
     try {
-      // In a real implementation, this would update Firestore
-      // For demo purposes, we'll simulate a successful update
+      const studentRef = doc(db, 'students', params.id);
+      await updateDoc(studentRef, {
+        ...formData,
+        updatedAt: serverTimestamp()
+      });
       
-      // const studentRef = doc(db, 'students', params.id);
-      // await updateDoc(studentRef, {
-      //   ...formData,
-      //   updatedAt: serverTimestamp()
-      // });
-
-      // Simulate a delay for the demo
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Success message and redirect
       alert('Student updated successfully!');
       router.push(`/dashboard/students/${params.id}`);
     } catch (err) {

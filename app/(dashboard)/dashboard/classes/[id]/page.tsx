@@ -50,119 +50,13 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
   async function fetchClassDetails() {
     setLoading(true);
     try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockClasses: Record<string, ClassData> = {
-        '1': {
-          id: '1',
-          name: 'Basic 1',
-          level: 1,
-          teacherId: '3',
-          teacherName: 'Mr. Emmanuel Nwachukwu',
-          capacity: 30,
-          currentStudents: 25,
-          subjects: ['Mathematics', 'English', 'Science', 'Social Studies', 'Creative Arts', 'Physical Education'],
-          academicYear: '2023/2024',
-          classRoom: 'Block A, Room 1',
-          description: 'Basic 1 is the first year of primary education in Nigeria. Students learn fundamental skills in literacy, numeracy, and basic science concepts.',
-          schedule: [
-            {
-              day: 'Monday',
-              periods: [
-                { time: '8:00 - 8:45', subject: 'Assembly' },
-                { time: '8:45 - 9:30', subject: 'Mathematics' },
-                { time: '9:30 - 10:15', subject: 'English' },
-                { time: '10:15 - 10:45', subject: 'Break' },
-                { time: '10:45 - 11:30', subject: 'Science' },
-                { time: '11:30 - 12:15', subject: 'Social Studies' },
-                { time: '12:15 - 1:00', subject: 'Creative Arts' },
-              ],
-            },
-            {
-              day: 'Tuesday',
-              periods: [
-                { time: '8:00 - 8:45', subject: 'Mathematics' },
-                { time: '8:45 - 9:30', subject: 'English' },
-                { time: '9:30 - 10:15', subject: 'Science' },
-                { time: '10:15 - 10:45', subject: 'Break' },
-                { time: '10:45 - 11:30', subject: 'Social Studies' },
-                { time: '11:30 - 12:15', subject: 'Physical Education' },
-                { time: '12:15 - 1:00', subject: 'Creative Arts' },
-              ],
-            },
-            {
-              day: 'Wednesday',
-              periods: [
-                { time: '8:00 - 8:45', subject: 'Mathematics' },
-                { time: '8:45 - 9:30', subject: 'English' },
-                { time: '9:30 - 10:15', subject: 'Science' },
-                { time: '10:15 - 10:45', subject: 'Break' },
-                { time: '10:45 - 11:30', subject: 'Social Studies' },
-                { time: '11:30 - 12:15', subject: 'Creative Arts' },
-                { time: '12:15 - 1:00', subject: 'Physical Education' },
-              ],
-            },
-            {
-              day: 'Thursday',
-              periods: [
-                { time: '8:00 - 8:45', subject: 'Mathematics' },
-                { time: '8:45 - 9:30', subject: 'English' },
-                { time: '9:30 - 10:15', subject: 'Science' },
-                { time: '10:15 - 10:45', subject: 'Break' },
-                { time: '10:45 - 11:30', subject: 'Social Studies' },
-                { time: '11:30 - 12:15', subject: 'Creative Arts' },
-                { time: '12:15 - 1:00', subject: 'Physical Education' },
-              ],
-            },
-            {
-              day: 'Friday',
-              periods: [
-                { time: '8:00 - 8:45', subject: 'Mathematics' },
-                { time: '8:45 - 9:30', subject: 'English' },
-                { time: '9:30 - 10:15', subject: 'Science' },
-                { time: '10:15 - 10:45', subject: 'Break' },
-                { time: '10:45 - 11:30', subject: 'Social Studies' },
-                { time: '11:30 - 12:15', subject: 'Creative Arts' },
-                { time: '12:15 - 1:00', subject: 'Physical Education' },
-              ],
-            },
-          ],
-        },
-        '2': {
-          id: '2',
-          name: 'Basic 2',
-          level: 2,
-          teacherId: '4',
-          teacherName: 'Ms. Fatima Ibrahim',
-          capacity: 30,
-          currentStudents: 28,
-          subjects: ['Mathematics', 'English', 'Science', 'Social Studies', 'Creative Arts', 'Physical Education'],
-          academicYear: '2023/2024',
-          classRoom: 'Block A, Room 2',
-          description: 'Basic 2 builds on the foundation established in Basic 1. Students continue to develop their literacy and numeracy skills while exploring more complex concepts.',
-          schedule: [
-            {
-              day: 'Monday',
-              periods: [
-                { time: '8:00 - 8:45', subject: 'Assembly' },
-                { time: '8:45 - 9:30', subject: 'English' },
-                { time: '9:30 - 10:15', subject: 'Mathematics' },
-                { time: '10:15 - 10:45', subject: 'Break' },
-                { time: '10:45 - 11:30', subject: 'Science' },
-                { time: '11:30 - 12:15', subject: 'Social Studies' },
-                { time: '12:15 - 1:00', subject: 'Creative Arts' },
-              ],
-            },
-            // Other days would be defined similarly
-          ],
-        },
-        // Other classes would be defined similarly
-      };
+      const classDocRef = doc(db, 'classes', params.id);
+      const classDocSnap = await getDoc(classDocRef);
 
-      const classDetails = mockClasses[params.id];
-      if (classDetails) {
-        setClassData(classDetails);
-        fetchStudentsInClass(classDetails.name);
+      if (classDocSnap.exists()) {
+        const classData = { id: classDocSnap.id, ...classDocSnap.data() } as ClassData;
+        setClassData(classData);
+        fetchStudentsInClass(classData.name);
       } else {
         setError('Class not found');
       }
@@ -176,59 +70,10 @@ export default function ClassDetailPage({ params }: { params: { id: string } }) 
 
   async function fetchStudentsInClass(className: string) {
     try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockStudents: Student[] = [
-        {
-          id: '1',
-          name: 'John Doe',
-          admissionNumber: 'STU001',
-          gender: 'Male',
-          guardianName: 'Jane Doe',
-          guardianPhone: '+2348012345678',
-        },
-        {
-          id: '7',
-          name: 'Amina Yusuf',
-          admissionNumber: 'STU007',
-          gender: 'Female',
-          guardianName: 'Ibrahim Yusuf',
-          guardianPhone: '+2348090123456',
-        },
-        {
-          id: '8',
-          name: 'Emeka Obi',
-          admissionNumber: 'STU008',
-          gender: 'Male',
-          guardianName: 'Chinwe Obi',
-          guardianPhone: '+2348101234567',
-        },
-        {
-          id: '9',
-          name: 'Funke Adeyemi',
-          admissionNumber: 'STU009',
-          gender: 'Female',
-          guardianName: 'Bola Adeyemi',
-          guardianPhone: '+2348112345678',
-        },
-        {
-          id: '10',
-          name: 'Hassan Mohammed',
-          admissionNumber: 'STU010',
-          gender: 'Male',
-          guardianName: 'Aisha Mohammed',
-          guardianPhone: '+2348123456789',
-        },
-      ];
-
-      // Filter students based on class (in a real app, this would be done in the database query)
-      // For demo, we'll just return the mock students for Basic 1
-      if (className === 'Basic 1') {
-        setStudents(mockStudents);
-      } else {
-        // For other classes, return a subset or different students
-        setStudents(mockStudents.slice(0, 3));
-      }
+      const q = query(collection(db, 'students'), where('class', '==', className));
+      const querySnapshot = await getDocs(q);
+      const studentsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Student[];
+      setStudents(studentsData);
     } catch (error) {
       console.error('Error fetching students:', error);
     }

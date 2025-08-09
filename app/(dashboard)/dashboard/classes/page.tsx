@@ -25,96 +25,21 @@ export default function ClassesPage() {
   const router = useRouter();
 
   useEffect(() => {
+    async function fetchClasses() {
+      setLoading(true);
+      try {
+        const querySnapshot = await getDocs(collection(db, 'classes'));
+        const classesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as ClassData[];
+        setClasses(classesData);
+      } catch (error) {
+        console.error('Error fetching classes:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchClasses();
   }, []);
-
-  async function fetchClasses() {
-    setLoading(true);
-    try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockClasses: ClassData[] = [
-        {
-          id: '1',
-          name: 'Basic 1',
-          level: 1,
-          teacherId: '3',
-          teacherName: 'Mr. Emmanuel Nwachukwu',
-          capacity: 30,
-          currentStudents: 25,
-          subjects: ['Mathematics', 'English', 'Science', 'Social Studies', 'Creative Arts', 'Physical Education'],
-          academicYear: '2023/2024',
-          classRoom: 'Block A, Room 1',
-        },
-        {
-          id: '2',
-          name: 'Basic 2',
-          level: 2,
-          teacherId: '4',
-          teacherName: 'Ms. Fatima Ibrahim',
-          capacity: 30,
-          currentStudents: 28,
-          subjects: ['Mathematics', 'English', 'Science', 'Social Studies', 'Creative Arts', 'Physical Education'],
-          academicYear: '2023/2024',
-          classRoom: 'Block A, Room 2',
-        },
-        {
-          id: '3',
-          name: 'Basic 3',
-          level: 3,
-          teacherId: '5',
-          teacherName: 'Mr. Chinedu Eze',
-          capacity: 35,
-          currentStudents: 32,
-          subjects: ['Mathematics', 'English', 'Basic Science and Technology', 'Social Studies', 'Creative Arts', 'Physical Education'],
-          academicYear: '2023/2024',
-          classRoom: 'Block A, Room 3',
-        },
-        {
-          id: '4',
-          name: 'Basic 4',
-          level: 4,
-          teacherId: '9',
-          teacherName: 'Mrs. Yetunde Adeyemi',
-          capacity: 35,
-          currentStudents: 30,
-          subjects: ['Mathematics', 'English', 'Basic Science and Technology', 'Social Studies', 'Creative Arts', 'Physical Education', 'Computer Studies'],
-          academicYear: '2023/2024',
-          classRoom: 'Block B, Room 1',
-        },
-        {
-          id: '5',
-          name: 'Basic 5',
-          level: 5,
-          teacherId: '10',
-          teacherName: 'Mr. Taiwo Ogunleye',
-          capacity: 40,
-          currentStudents: 36,
-          subjects: ['Mathematics', 'English', 'Basic Science and Technology', 'Social Studies', 'Creative Arts', 'Physical Education', 'Computer Studies', 'Civic Education'],
-          academicYear: '2023/2024',
-          classRoom: 'Block B, Room 2',
-        },
-        {
-          id: '6',
-          name: 'Basic 6',
-          level: 6,
-          teacherId: '11',
-          teacherName: 'Mrs. Aisha Bello',
-          capacity: 40,
-          currentStudents: 38,
-          subjects: ['Mathematics', 'English', 'Basic Science and Technology', 'Social Studies', 'Creative Arts', 'Physical Education', 'Computer Studies', 'Civic Education', 'Pre-Vocational Studies'],
-          academicYear: '2023/2024',
-          classRoom: 'Block B, Room 3',
-        },
-      ];
-
-      setClasses(mockClasses);
-    } catch (error) {
-      console.error('Error fetching classes:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   // Filter classes based on search term
   const filteredClasses = classes.filter(cls =>

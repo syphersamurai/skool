@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import PaystackButton from '@/components/PaystackButton';
+import { generatePaystackReference, formatCurrency } from '@/lib/paystack';
 
 interface FeeRecord {
   id: string;
@@ -43,92 +45,10 @@ export default function PayFeePage({ params }: { params: { id: string } }) {
   async function fetchFeeRecord() {
     setLoading(true);
     try {
-      // In a real implementation, this would fetch from Firestore
-      // For demo purposes, we'll use mock data
-      const mockFeeRecords: Record<string, FeeRecord> = {
-        '2': {
-          id: '2',
-          studentId: '2',
-          studentName: 'Mary Johnson',
-          class: 'Basic 2',
-          feeType: 'Tuition Fee',
-          amount: 55000,
-          amountPaid: 30000,
-          balance: 25000,
-          dueDate: '2023-09-15',
-          status: 'partial',
-          paymentDate: '2023-09-05',
-          paymentMethod: 'Paystack',
-          transactionId: 'TRX234567',
-          term: 'First Term',
-          academicYear: '2023/2024',
-        },
-        '3': {
-          id: '3',
-          studentId: '3',
-          studentName: 'David Smith',
-          class: 'Basic 3',
-          feeType: 'Tuition Fee',
-          amount: 60000,
-          amountPaid: 0,
-          balance: 60000,
-          dueDate: '2023-09-15',
-          status: 'unpaid',
-          term: 'First Term',
-          academicYear: '2023/2024',
-        },
-        '4': {
-          id: '4',
-          studentId: '4',
-          studentName: 'Grace Okafor',
-          class: 'Basic 4',
-          feeType: 'Tuition Fee',
-          amount: 65000,
-          amountPaid: 0,
-          balance: 65000,
-          dueDate: '2023-09-15',
-          status: 'overdue',
-          term: 'First Term',
-          academicYear: '2023/2024',
-        },
-        '6': {
-          id: '6',
-          studentId: '6',
-          studentName: 'Chioma Eze',
-          class: 'Basic 6',
-          feeType: 'Tuition Fee',
-          amount: 75000,
-          amountPaid: 40000,
-          balance: 35000,
-          dueDate: '2023-09-15',
-          status: 'partial',
-          paymentDate: '2023-09-08',
-          paymentMethod: 'Paystack',
-          transactionId: 'TRX456789',
-          term: 'First Term',
-          academicYear: '2023/2024',
-        },
-        '8': {
-          id: '8',
-          studentId: '2',
-          studentName: 'Mary Johnson',
-          class: 'Basic 2',
-          feeType: 'Development Levy',
-          amount: 10000,
-          amountPaid: 0,
-          balance: 10000,
-          dueDate: '2023-09-30',
-          status: 'unpaid',
-          term: 'First Term',
-          academicYear: '2023/2024',
-        },
-      };
-
-      const record = mockFeeRecords[params.id];
-      if (record) {
-        setFeeRecord(record);
-        // Set default payment amount to the balance
-        setPaymentAmount(record.balance.toString());
+      const feeData = await feesService.getById(params.id);
+      if (feeData) {
+        setFeeRecord(feeData);
+        setPaymentAmount(feeData.balance.toString());
       } else {
         setError('Fee record not found');
       }
@@ -141,37 +61,31 @@ export default function PayFeePage({ params }: { params: { id: string } }) {
   }
 
   const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) {
-      return;
-    }
-
-    // In a real implementation, this would validate the coupon against Firestore
-    // For demo purposes, we'll simulate a coupon validation
-    const validCoupons = {
-      'NEWSTUDENT10': { type: 'percentage', value: 10 },
-      'WELCOME20': { type: 'percentage', value: 20 },
-      'DISCOUNT5000': { type: 'fixed', value: 5000 },
-    };
-
-    const coupon = validCoupons[couponCode as keyof typeof validCoupons];
+    if (!couponCode.trim() || discountApplied) return;
     
-    if (coupon && feeRecord) {
-      let discount = 0;
-      if (coupon.type === 'percentage') {
-        discount = (feeRecord.balance * coupon.value) / 100;
+    try {
+      // Import the validateCoupon function dynamically to avoid SSR issues
+      const { validateCoupon } = await import('@/lib/coupon');
+      
+      // Validate the coupon
+      const result = await validateCoupon(couponCode, feeRecord.balance);
+      
+      if (result.valid && result.discountAmount !== undefined) {
+        setDiscountAmount(result.discountAmount);
+        setDiscountApplied(true);
+        setPaymentAmount((feeRecord.balance - result.discountAmount).toString());
+        alert(`Coupon applied! You received a discount of ₦${result.discountAmount.toFixed(2)}.`);
       } else {
-        discount = Math.min(coupon.value, feeRecord.balance);
+        alert(result.message || 'Invalid or expired coupon code.');
+        setDiscountApplied(false);
+        setDiscountAmount(0);
+        setPaymentAmount(feeRecord?.balance.toString() || '0');
       }
-
-      setDiscountAmount(discount);
-      setDiscountApplied(true);
-      setPaymentAmount((feeRecord.balance - discount).toString());
-      alert(`Coupon applied! You received a discount of ₦${discount.toFixed(2)}.`);
-    } else {
-      alert('Invalid or expired coupon code.');
+    } catch (err) {
+      console.error('Error applying coupon:', err);
+      alert('Failed to apply coupon. Please try again.');
       setDiscountApplied(false);
       setDiscountAmount(0);
-      setPaymentAmount(feeRecord?.balance.toString() || '0');
     }
   };
 
@@ -194,19 +108,59 @@ export default function PayFeePage({ params }: { params: { id: string } }) {
     setError('');
 
     try {
-      // In a real implementation, this would update Firestore and possibly integrate with Paystack
-      // For demo purposes, we'll simulate a successful payment
-
-      // Simulate a delay for the demo
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
       // Calculate new values
       const newAmountPaid = feeRecord.amountPaid + paymentAmountNum;
       const newBalance = feeRecord.balance - paymentAmountNum;
-      const newStatus = newBalance === 0 ? 'paid' : 'partial';
+      let newStatus: 'paid' | 'partial' | 'unpaid' | 'overdue' = 'partial';
 
-      // Success message and redirect
-      alert(`Payment of ₦${paymentAmountNum.toFixed(2)} recorded successfully!`);
+      if (newBalance <= 0) {
+        newStatus = 'paid';
+      } else if (newAmountPaid === 0) {
+        newStatus = 'unpaid';
+      }
+
+      // Update the fee record
+      await feesService.update(feeRecord.id, {
+        amountPaid: newAmountPaid,
+        balance: newBalance,
+        status: newStatus,
+      });
+
+      // Create a payment record
+      await paymentsService.create({
+        feeId: feeRecord.id,
+        studentId: feeRecord.studentId,
+        studentName: feeRecord.studentName,
+        amount: paymentAmountNum,
+        paymentMethod: paymentMethod as 'cash' | 'bank_transfer' | 'cheque' | 'paystack',
+        paymentDate: new Date(),
+        transactionId: transactionId,
+        status: 'completed',
+        discountApplied: discountApplied,
+        discountAmount: discountAmount,
+        metadata: { couponCode: couponCode },
+      });
+
+      // If a coupon was applied, record its usage
+      if (discountApplied && discountAmount > 0) {
+        try {
+          // Import the recordCouponUsage function dynamically
+          const { recordCouponUsage } = await import('@/lib/coupon');
+          
+          // Record the coupon usage
+          await recordCouponUsage(
+            couponCode, 
+            feeRecord.studentId,  
+            feeRecord.id,
+            discountAmount
+          );
+        } catch (couponErr) {
+          console.error('Error recording coupon usage:', couponErr);
+          // We don't want to fail the payment if coupon recording fails
+        }
+      }
+
+      alert(`Payment of ${formatCurrencyDisplay(paymentAmountNum)} recorded successfully!`);
       router.push('/dashboard/fees');
     } catch (err) {
       console.error('Error processing payment:', err);
@@ -216,13 +170,11 @@ export default function PayFeePage({ params }: { params: { id: string } }) {
     }
   };
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 2
-    }).format(amount);
+  // Format currency - using our utility function
+  const formatCurrencyDisplay = (amount: number) => {
+    // Our utility function expects kobo, but our app uses naira directly
+    // So we multiply by 100 to convert to kobo before passing to the utility
+    return formatCurrency(amount * 100, 'NGN');
   };
 
   if (loading) {
@@ -289,15 +241,15 @@ export default function PayFeePage({ params }: { params: { id: string } }) {
             </div>
             <div>
               <span className="text-sm text-gray-500">Total Amount</span>
-              <p className="font-medium">{formatCurrency(feeRecord.amount)}</p>
+              <p className="font-medium">{formatCurrencyDisplay(feeRecord.amount)}</p>
             </div>
             <div>
               <span className="text-sm text-gray-500">Amount Paid</span>
-              <p className="font-medium">{formatCurrency(feeRecord.amountPaid)}</p>
+              <p className="font-medium">{formatCurrencyDisplay(feeRecord.amountPaid)}</p>
             </div>
             <div>
               <span className="text-sm text-gray-500">Balance Due</span>
-              <p className="font-medium text-red-600">{formatCurrency(feeRecord.balance)}</p>
+              <p className="font-medium text-red-600">{formatCurrencyDisplay(feeRecord.balance)}</p>
             </div>
             <div>
               <span className="text-sm text-gray-500">Due Date</span>
@@ -338,7 +290,7 @@ export default function PayFeePage({ params }: { params: { id: string } }) {
             </div>
             {discountApplied && (
               <div className="mt-2 text-sm text-green-600">
-                Discount of {formatCurrency(discountAmount)} applied!
+                Discount of {formatCurrencyDisplay(discountAmount)} applied!
               </div>
             )}
           </div>
@@ -362,7 +314,7 @@ export default function PayFeePage({ params }: { params: { id: string } }) {
                 />
               </div>
               <p className="mt-1 text-sm text-gray-500">
-                Maximum: {formatCurrency(feeRecord.balance)}
+                Maximum: {formatCurrencyDisplay(feeRecord.balance)}
               </p>
             </div>
 
@@ -422,13 +374,55 @@ export default function PayFeePage({ params }: { params: { id: string } }) {
           <p className="text-gray-600 mb-4">
             Click the button below to make an online payment using Paystack. You will be redirected to a secure payment page.
           </p>
-          <button
-            type="button"
-            className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 w-full md:w-auto"
-            onClick={() => alert('In a real implementation, this would redirect to Paystack payment page.')}
-          >
-            Pay with Paystack
-          </button>
+          
+          {/* Import PaystackButton component */}
+          {feeRecord && (
+            <PaystackButton
+              amount={parseFloat(paymentAmount) || feeRecord.balance}
+              email="student@example.com" // In a real app, this would be the student's or parent's email
+              reference={generatePaystackReference(`FEE_${feeRecord.id.substring(0, 8)}`)}
+              metadata={{
+                student_id: feeRecord.studentId,
+                student_name: feeRecord.studentName,
+                fee_id: feeRecord.id,
+                fee_type: feeRecord.feeType,
+                class: feeRecord.class,
+                term: feeRecord.term,
+                academic_year: feeRecord.academicYear,
+                discount_applied: discountApplied,
+                discount_amount: discountAmount
+              }}
+              onSuccess={(reference) => {
+                // Handle successful payment
+                setTransactionId(reference);
+                setPaymentMethod('paystack');
+                
+                // Verify the transaction
+                fetch(`/api/paystack/verify/${reference}`)
+                  .then(res => res.json())
+                  .then(data => {
+                    if (data.status) {
+                      // If verification is successful, submit the form
+                      handlePaymentSubmit(new Event('submit') as any);
+                    } else {
+                      setError('Payment verification failed. Please contact support.');
+                    }
+                  })
+                  .catch(err => {
+                    console.error('Error verifying payment:', err);
+                    setError('Error verifying payment. Please contact support.');
+                  });
+              }}
+              onCancel={() => {
+                // Handle cancelled payment
+                alert('Payment cancelled');
+              }}
+              className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 w-full md:w-auto"
+              disabled={processing || parseFloat(paymentAmount) <= 0 || parseFloat(paymentAmount) > feeRecord.balance}
+            >
+              Pay with Paystack
+            </PaystackButton>
+          )}
         </div>
       </div>
     </div>
